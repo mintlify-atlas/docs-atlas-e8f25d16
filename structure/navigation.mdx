@@ -1,0 +1,97 @@
+---
+title: 'Bottom tab navigation in gesDeportiva'
+description: 'Learn how React Navigation v6 bottom tabs are configured in gesDeportiva, what each part does, and how to register additional screens.'
+---
+
+gesDeportiva uses React Navigation v6 to handle all in-app routing. Navigation is centralised in a single file — `navigations/Navigation.js` — which creates a bottom tab bar and registers each screen. This keeps routing logic out of individual screen components and makes it easy to add or reorder tabs without touching the screens themselves.
+
+## Full source
+
+```js Navigation.js
+import * as React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
+import Login from "../screens/Login";
+import Menu from "../screens/Menu";
+
+const Tab = createBottomTabNavigator(); //menu de abajo
+
+
+const Navigation = () => {
+    return (
+        <NavigationContainer>
+            <Tab.Navigator>
+                <Tab.Screen
+                    name="Login"
+                    component={Login}
+                    options={{title: 'Login', headerTitleAlign: 'center'}}
+                />
+                <Tab.Screen
+                    name="Menu"
+                    component={Menu}
+                    options={{title: 'Menu', headerTitleAlign: 'center'}}
+                />
+            </Tab.Navigator>
+        </NavigationContainer>
+    );
+};
+export default Navigation;
+```
+
+## How each part works
+
+**`NavigationContainer`** is the root wrapper required by React Navigation. It manages the navigation state tree and must wrap all navigators. It is rendered once, at the top of the `Navigation` component.
+
+**`createBottomTabNavigator()`** returns a `Tab` object with two sub-components — `Tab.Navigator` and `Tab.Screen` — that together build the tab bar UI and handle screen transitions.
+
+**`Tab.Navigator`** renders the actual tab bar at the bottom of the screen and handles which screen is currently active. Placing it inside `NavigationContainer` gives it access to the shared navigation state.
+
+**`Tab.Screen`** registers a single tab. Each screen declaration accepts:
+
+| Prop | Value | Purpose |
+|---|---|---|
+| `name` | `"Login"` / `"Menu"` | Unique route key used for programmatic navigation |
+| `component` | `Login` / `Menu` | React component to render when the tab is active |
+| `options.title` | `'Login'` / `'Menu'` | Label shown in the tab bar and the header |
+| `options.headerTitleAlign` | `'center'` | Centres the header title on both iOS and Android |
+
+## Registered screens
+
+The navigator currently registers two screens:
+
+- **Login** — renders the `Login` component from `screens/Login.js`. This is the first tab and therefore the default screen on launch.
+- **Menu** — renders the `Menu` component from `screens/Menu.js`.
+
+## Adding a new tab screen
+
+To add a third screen, create the screen component file and then add a `Tab.Screen` entry in `Navigation.js`:
+
+```js Navigation.js
+import Profile from "../screens/Profile";
+
+// Inside Tab.Navigator, after the existing Tab.Screen entries:
+<Tab.Screen
+    name="Profile"
+    component={Profile}
+    options={{title: 'Profile', headerTitleAlign: 'center'}}
+/>
+```
+
+<Tip>
+The order of `Tab.Screen` declarations determines the order of tabs in the bar. Place the most-used screen first so it is selected by default on launch.
+</Tip>
+
+## Dependencies
+
+The navigation system relies on the following packages, all pinned in `package.json`:
+
+| Package | Version | Role |
+|---|---|---|
+| `@react-navigation/native` | `^6.0.11` | Core navigation primitives and `NavigationContainer` |
+| `@react-navigation/bottom-tabs` | `^6.3.2` | `createBottomTabNavigator` and the tab bar UI |
+| `react-native-screens` | `^3.15.0` | Native screen management for better performance |
+| `react-native-safe-area-context` | `^4.3.1` | Safe area insets used by the tab bar on notched devices |
+
+<Note>
+`react-native-screens` and `react-native-safe-area-context` are peer dependencies of React Navigation. They must be installed and — for bare React Native projects — their native modules must be linked. Running `npx pod-install` (iOS) or rebuilding the Android project after install is required.
+</Note>

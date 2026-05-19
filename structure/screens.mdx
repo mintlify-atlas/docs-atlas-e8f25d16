@@ -1,0 +1,114 @@
+---
+title: 'Screens reference: Login and Menu in gesDeportiva'
+description: 'Understand the Login and Menu screen components, their current structure, and how to extend them or add new screens to the app.'
+---
+
+gesDeportiva currently ships with two screen components: `Login` and `Menu`. Both follow the same minimal structure — a `View` container with a `Text` label and an empty `StyleSheet` — giving you a clean slate to build real UI on top of. This page explains what each screen contains and how to create additional screens using the same pattern.
+
+## Login screen
+
+The Login screen is the first tab shown when the app launches.
+
+<CodeGroup>
+
+```js Login.js
+import React, {} from 'react';
+import {StyleSheet, Text, View} from "react-native";
+
+export default function Login (){
+    return(
+        <View>
+            <Text>login</Text>
+        </View>
+    )
+}
+
+const styles = StyleSheet.create({})
+```
+
+</CodeGroup>
+
+The component renders a single `View` wrapping a `Text` node with the placeholder string `"login"`. The `StyleSheet.create({})` call at module scope defines no rules yet, but the object is ready to receive style definitions without any further imports.
+
+Typical additions for a real login screen:
+
+- `TextInput` fields for username and password
+- A submit `Button` or `Pressable` with an `onPress` handler
+- Form validation state managed with `useState`
+- An API call or AsyncStorage read for authentication
+- Navigation to the Menu tab on successful login using `useNavigation`
+
+## Menu screen
+
+The Menu screen is the second tab registered in the navigator.
+
+<CodeGroup>
+
+```js Menu.js
+import React, {} from 'react';
+import {StyleSheet, Text, View} from "react-native";
+
+export default function Menu (){
+    return(
+        <View>
+            <Text>menu</Text>
+        </View>
+    )
+}
+
+const styles = StyleSheet.create({})
+```
+
+</CodeGroup>
+
+The structure is identical to the Login screen: a `View` with a `Text` placeholder and an empty `StyleSheet`. This symmetry means both screens can be extended in the same way.
+
+Typical additions for a real menu screen:
+
+- A `FlatList` or `ScrollView` listing the app's features or sports categories
+- `Pressable` or `TouchableOpacity` items that navigate to sub-screens
+- Icons from a library such as `react-native-vector-icons`
+- User profile information pulled from app state or context
+
+## Creating a new screen
+
+All screens in gesDeportiva follow the same file pattern. To add a `Profile` screen:
+
+<Steps>
+  <Step title="Create the screen file">
+    Add a new file at `screens/Profile.js` with the standard structure:
+
+    ```js screens/Profile.js
+    import React from 'react';
+    import { StyleSheet, Text, View } from 'react-native';
+
+    export default function Profile() {
+      return (
+        <View>
+          <Text>Profile</Text>
+        </View>
+      );
+    }
+
+    const styles = StyleSheet.create({});
+    ```
+  </Step>
+  <Step title="Register it in Navigation.js">
+    Import the new component and add a `Tab.Screen` entry inside `Tab.Navigator`:
+
+    ```js navigations/Navigation.js
+    import Profile from "../screens/Profile";
+
+    // Inside Tab.Navigator:
+    <Tab.Screen
+        name="Profile"
+        component={Profile}
+        options={{title: 'Profile', headerTitleAlign: 'center'}}
+    />
+    ```
+  </Step>
+</Steps>
+
+<Tip>
+Always define styles with `StyleSheet.create({})` rather than plain JavaScript objects. React Native validates the style properties in development and caches the style IDs in production, reducing bridge traffic and improving render performance.
+</Tip>

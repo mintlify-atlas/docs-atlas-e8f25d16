@@ -1,0 +1,189 @@
+---
+title: "Building and running gesDeportiva on Android"
+description: "Set up your Android environment, configure the build, and run gesDeportiva on an emulator or physical device using React Native CLI."
+---
+
+Android development for gesDeportiva uses the standard React Native CLI workflow. You compile and bundle the JavaScript layer alongside the native Android project managed by Gradle, then deploy to an emulator or a connected device over ADB.
+
+## Prerequisites
+
+Before running the app you need the following tools installed and configured:
+
+- **Android Studio** — includes the Android SDK, AVD Manager, and the emulator
+- **Android SDK** — API level 31 (Android 12) is the compile and target SDK; API level 21 (Android 5.0) is the minimum supported SDK
+- **JDK 11** — required by the Gradle build system
+- **Node.js** and **npm** — to run the React Native CLI and Metro bundler
+
+Make sure `ANDROID_HOME` (or `ANDROID_SDK_ROOT`) is set in your shell profile and that `$ANDROID_HOME/platform-tools` is on your `PATH`.
+
+## Build configuration
+
+The SDK versions and NDK version are defined in `android/build.gradle`:
+
+```groovy android/build.gradle
+buildscript {
+    ext {
+        buildToolsVersion = "31.0.0"
+        minSdkVersion = 21
+        compileSdkVersion = 31
+        targetSdkVersion = 31
+
+        if (System.properties['os.arch'] == "aarch64") {
+            // For M1 Users we need to use the NDK 24 which added support for aarch64
+            ndkVersion = "24.0.8215888"
+        } else {
+            // Otherwise we default to the side-by-side NDK version from AGP.
+            ndkVersion = "21.4.7075529"
+        }
+    }
+}
+```
+
+The app module reads these values from the root project:
+
+```groovy android/app/build.gradle
+android {
+    ndkVersion rootProject.ext.ndkVersion
+
+    compileSdkVersion rootProject.ext.compileSdkVersion
+
+    defaultConfig {
+        applicationId "com.gesdeportiva"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+        buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
+    }
+}
+```
+
+## Running the app
+
+<Steps>
+  <Step title="Start the Metro bundler">
+    In a dedicated terminal, start the JavaScript bundler. Metro watches your source files and serves the bundle to the app at runtime.
+
+    ```bash
+    npm start
+    ```
+  </Step>
+  <Step title="Build and launch on Android">
+    In a second terminal, build the native Android project and deploy it to a running emulator or connected device.
+
+    ```bash
+    npm run android
+    ```
+
+    This runs `react-native run-android` under the hood, which compiles the Gradle project and installs the debug APK.
+  </Step>
+</Steps>
+
+You can also run both steps with a single command — `npm run android` will automatically start Metro if it is not already running.
+
+## Emulator vs physical device
+
+<Tabs>
+  <Tab title="Emulator">
+    Open the **AVD Manager** in Android Studio and start a virtual device. Ensure it targets API 21 or higher. Verify it is visible to ADB before running the build:
+
+    ```bash
+    adb devices
+    ```
+
+    You should see an entry like `emulator-5554 device`.
+  </Tab>
+  <Tab title="Physical device">
+    Enable **USB Debugging** in the device's Developer Options, then connect it via USB. Confirm ADB recognises the device:
+
+    ```bash
+    adb devices
+    ```
+
+    The device serial number should appear with status `device`. You may need to accept the USB debugging prompt on the device.
+  </Tab>
+</Tabs>
+
+<Tip>
+  Run `adb devices` before `npm run android` whenever you switch between an emulator and a physical device. If ADB lists more than one target, set `ANDROID_SERIAL` to the device serial you want to use.
+</Tip>
+
+## New Architecture (Fabric and TurboModules)
+
+gesDeportiva ships with the New Architecture disabled by default. The opt-in is controlled by a Gradle property that is injected into the app as a `BuildConfig` field.
+
+`MainActivity.java` reads that flag to activate the Fabric renderer and Concurrent Root:
+
+```java android/app/src/main/java/com/gesdeportiva/MainActivity.java
+public static class MainActivityDelegate extends ReactActivityDelegate {
+    @Override
+    protected ReactRootView createRootView() {
+      ReactRootView reactRootView = new ReactRootView(getContext());
+      // If you opted-in for the New Architecture, we enable the Fabric Renderer.
+      reactRootView.setIsFabric(BuildConfig.IS_NEW_ARCHITECTURE_ENABLED);
+      return reactRootView;
+    }
+
+    @Override
+    protected boolean isConcurrentRootEnabled() {
+      // If you opted-in for the New Architecture, we enable Concurrent Root (i.e. React 18).
+      return BuildConfig.IS_NEW_ARCHITECTURE_ENABLED;
+    }
+}
+```
+
+`MainApplication.java` applies the same flag to TurboModules:
+
+```java android/app/src/main/java/com/gesdeportiva/MainApplication.java
+ReactFeatureFlags.useTurboModules = BuildConfig.IS_NEW_ARCHITECTURE_ENABLED;
+```
+
+The flag is controlled by `android/gradle.properties`, which ships with it set to `false`:
+
+```properties android/gradle.properties
+# Use this property to enable support to the new architecture.
+# This will allow you to use TurboModules and the Fabric render in
+# your application.
+newArchEnabled=false
+```
+
+To enable the New Architecture, change `newArchEnabled=false` to `newArchEnabled=true` in `android/gradle.properties`, then do a clean build:
+
+```bash
+cd android && ./gradlew clean
+cd ..
+npm run android
+```
+
+## Common issues
+
+<AccordionGroup>
+  <Accordion title="Metro port conflict">
+    Metro defaults to port 8081. If something else is already using that port, start Metro on a different port:
+
+    ```bash
+    npm start -- --port 8082
+    ```
+
+    Then tell the Android build to use the same port by shaking the device to open the developer menu and updating the bundle URL, or by setting `metro.config.js`.
+  </Accordion>
+  <Accordion title="Emulator not found">
+    If `npm run android` reports that no emulator is running, open Android Studio's AVD Manager, start a virtual device, and wait until it is fully booted before re-running the command. Confirm with `adb devices`.
+  </Accordion>
+  <Accordion title="SDK path not set">
+    Gradle needs to locate the Android SDK. Create or update `android/local.properties` with the correct path:
+
+    ```properties android/local.properties
+    sdk.dir=/Users/yourname/Library/Android/sdk
+    ```
+
+    On Linux this is typically `~/Android/Sdk`.
+  </Accordion>
+  <Accordion title="Build fails after changing IS_NEW_ARCHITECTURE_ENABLED">
+    Switching the New Architecture flag requires a clean build. Run the following before rebuilding:
+
+    ```bash
+    cd android && ./gradlew clean
+    ```
+  </Accordion>
+</AccordionGroup>

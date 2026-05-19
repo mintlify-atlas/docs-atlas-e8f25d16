@@ -1,0 +1,56 @@
+---
+title: "gesDeportiva: Cross-Platform Sports App Overview"
+description: "gesDeportiva is a React Native sports management app built with React 18 and React Navigation v6, running on Android and iOS from a single codebase."
+---
+
+gesDeportiva is a cross-platform mobile application for sports management, built with React Native 0.69.4 and React 18. It runs on both Android and iOS from a single JavaScript codebase, and its architecture is ready for React Native's New Architecture (Fabric renderer and Concurrent Root).
+
+## Tech stack
+
+| Technology | Version |
+|---|---|
+| React Native | 0.69.4 |
+| React | 18.0.0 |
+| React Navigation (native) | ^6.0.11 |
+| React Navigation (bottom tabs) | ^6.3.2 |
+| React Navigation (native stack) | ^6.7.0 |
+| react-native-screens | ^3.15.0 |
+| react-native-safe-area-context | ^4.3.1 |
+
+## Key features
+
+- **Cross-platform** — one codebase targets Android and iOS
+- **Bottom tab navigation** — Login and Menu tabs powered by `@react-navigation/bottom-tabs`
+- **New Architecture ready** — `MainActivity.java` includes Fabric and Concurrent Root support via `BuildConfig.IS_NEW_ARCHITECTURE_ENABLED`
+- **Minimal surface area** — `App.js` delegates entirely to the `Navigation` component, keeping the entry point clean
+
+## How the app starts
+
+The entry point `index.js` registers the root component with React Native's `AppRegistry`:
+
+```js
+import {AppRegistry} from 'react-native';
+import App from './App';
+import {name as appName} from './app.json';
+
+AppRegistry.registerComponent(appName, () => App);
+```
+
+`App.js` then renders the `Navigation` component, which wraps the entire tab structure inside a `NavigationContainer`.
+
+## Explore the docs
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="bolt" href="/quickstart">
+    Clone the repo, install dependencies, and run the app on Android or iOS in a few steps.
+  </Card>
+  <Card title="Installation" icon="wrench" href="/installation">
+    Set up Android Studio or Xcode and configure your development environment.
+  </Card>
+  <Card title="App structure" icon="folder-open" href="/structure/overview">
+    Understand how files, screens, and navigation are organized in the project.
+  </Card>
+  <Card title="Navigation" icon="map" href="/structure/navigation">
+    Learn how the bottom tab navigator is wired together with React Navigation v6.
+  </Card>
+</CardGroup>

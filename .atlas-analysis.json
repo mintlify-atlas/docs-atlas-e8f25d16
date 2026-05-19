@@ -1,0 +1,45 @@
+{
+  "projectType": "frontend",
+  "projectName": "gesDeportiva",
+  "projectDescription": "A React Native mobile application for sports management, featuring user authentication and navigation for both Android and iOS platforms.",
+  "theme": "almond",
+  "primaryColor": "#2E7D32",
+  "lightColor": "#A5D6A7",
+  "darkColor": "#1B5E20",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart", "installation"]
+          },
+          {
+            "group": "App Structure",
+            "pages": ["structure/overview", "structure/navigation", "structure/screens"]
+          },
+          {
+            "group": "Development",
+            "pages": ["development/android", "development/ios", "development/testing"]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Cross-platform React Native app (Android & iOS)",
+    "Bottom tab navigation using React Navigation",
+    "User authentication screen (Login)",
+    "Main menu screen",
+    "New Architecture (Fabric/TurboModules) ready",
+    "React 18 support with Concurrent Root"
+  ],
+  "publicApiSurface": [
+    "App component (App.js)",
+    "Navigation component (navigations/Navigation.js)",
+    "Login screen (screens/Login.js)",
+    "Menu screen (screens/Menu.js)",
+    "AppRegistry.registerComponent('gesDeportiva')"
+  ]
+}

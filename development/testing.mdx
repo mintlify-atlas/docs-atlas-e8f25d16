@@ -1,0 +1,137 @@
+---
+title: "Testing gesDeportiva with Jest and ESLint"
+description: "Run the Jest test suite and ESLint linter for gesDeportiva, understand the project's test configuration, and keep tests running in watch mode."
+---
+
+gesDeportiva uses Jest for unit and component testing, with `react-test-renderer` to render React Native components in a pure JavaScript environment — no simulator or emulator required. ESLint with the `@react-native-community` shared config enforces consistent code style across the project.
+
+## Jest configuration
+
+The Jest preset is declared directly in `package.json`:
+
+```json package.json
+{
+  "jest": {
+    "preset": "react-native"
+  }
+}
+```
+
+The `react-native` preset configures the transform pipeline, module name mapper, and test environment so that React Native components can be tested without a native runtime. Babel transforms are handled by `babel-jest` using the Metro preset:
+
+```javascript babel.config.js
+module.exports = {
+  presets: ['module:metro-react-native-babel-preset'],
+};
+```
+
+The relevant test dependencies from `package.json`:
+
+| Package | Version | Purpose |
+|---|---|---|
+| `jest` | `^26.6.3` | Test runner |
+| `babel-jest` | `^26.6.3` | Babel transform for Jest |
+| `react-test-renderer` | `18.0.0` | Renders React Native components to JSON |
+
+<Note>
+  `react-test-renderer` must be the same version as `react` (`18.0.0`). A version mismatch will cause tests to fail with a peer dependency warning.
+</Note>
+
+## Running tests
+
+<CodeGroup>
+
+```bash Run all tests
+npm test
+```
+
+```bash Watch mode
+npm test -- --watch
+```
+
+```bash Watch all files
+npm test -- --watchAll
+```
+
+</CodeGroup>
+
+<Tip>
+  Use `--watch` during development to re-run only the tests affected by your changes. Use `--watchAll` to re-run the full suite on every save.
+</Tip>
+
+## Test files
+
+Tests live in the `__tests__/` directory. The project currently includes one test file:
+
+```
+__tests__/
+└── App-test.js
+```
+
+### App-test.js
+
+This smoke test verifies that the root `App` component renders without throwing:
+
+```javascript __tests__/App-test.js
+/**
+ * @format
+ */
+
+import 'react-native';
+import React from 'react';
+import App from '../App';
+
+// Note: test renderer must be required after react-native.
+import renderer from 'react-test-renderer';
+
+it('renders correctly', () => {
+  renderer.create(<App />);
+});
+```
+
+The `import 'react-native'` line at the top is required by `react-test-renderer` — it must be imported before the renderer. The test creates a full render of `<App />` using `renderer.create()`. If the component throws during render, the test fails.
+
+## Linting with ESLint
+
+gesDeportiva uses ESLint with the `@react-native-community` shared configuration, which enforces React Native best practices and code style:
+
+```javascript .eslintrc.js
+module.exports = {
+  root: true,
+  extends: '@react-native-community',
+};
+```
+
+Run the linter across the entire project:
+
+```bash
+npm run lint
+```
+
+This runs `eslint .`, which checks all JavaScript and JSX files in the project root according to the rules defined in `@react-native-community/eslint-config`.
+
+<Note>
+  The `root: true` setting prevents ESLint from looking for configuration files in parent directories, ensuring only this project's config applies.
+</Note>
+
+## Test and lint commands reference
+
+<CodeGroup>
+
+```bash Test
+npm test
+```
+
+```bash Lint
+npm run lint
+```
+
+```bash Test in watch mode
+npm test -- --watch
+```
+
+```bash Test with coverage
+npm test -- --coverage
+```
+
+</CodeGroup>

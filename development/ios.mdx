@@ -1,0 +1,195 @@
+---
+title: "Building and running gesDeportiva on iOS"
+description: "Set up Xcode and CocoaPods on macOS, install iOS pod dependencies, and run gesDeportiva on the iOS Simulator or a physical iPhone or iPad."
+---
+
+iOS development for gesDeportiva requires a Mac running macOS. The native layer is managed by Xcode and CocoaPods, while the JavaScript layer is served by Metro — the same bundler used for Android. The `ios/Podfile` declares all native iOS dependencies and wires in React Native's CocoaPods integration scripts.
+
+<Warning>
+  iOS development is only possible on macOS. You cannot build or run the iOS target from Linux or Windows.
+</Warning>
+
+## Prerequisites
+
+- **macOS** — required by Xcode and the iOS build toolchain
+- **Xcode** — install from the Mac App Store; includes the iOS Simulator and command-line tools
+- **CocoaPods** — the dependency manager for native iOS libraries (`gem install cocoapods`)
+- **Node.js** and **npm** — to run the React Native CLI and Metro bundler
+- **Ruby** — CocoaPods is a Ruby gem; the project includes a `.ruby-version` file specifying Ruby **2.7.5** (used with `rbenv`, `rvm`, or `asdf`)
+
+After installing Xcode, open it once to accept the licence agreement, then install the command-line tools:
+
+```bash
+xcode-select --install
+```
+
+## Podfile setup
+
+The `ios/Podfile` configures the CocoaPods target for gesDeportiva. It uses the React Native helpers to wire in all required native modules:
+
+```ruby ios/Podfile
+require_relative '../node_modules/react-native/scripts/react_native_pods'
+require_relative '../node_modules/@react-native-community/cli-platform-ios/native_modules'
+
+platform :ios, '12.4'
+install! 'cocoapods', :deterministic_uuids => false
+
+production = ENV["PRODUCTION"] == "1"
+
+target 'gesDeportiva' do
+  config = use_native_modules!
+
+  # Flags change depending on the env values.
+  flags = get_default_flags()
+
+  use_react_native!(
+    :path => config[:reactNativePath],
+    :production => production,
+    :hermes_enabled => flags[:hermes_enabled],
+    :fabric_enabled => flags[:fabric_enabled],
+    :flipper_configuration => FlipperConfiguration.enabled,
+    :app_path => "#{Pod::Config.instance.installation_root}/.."
+  )
+
+  target 'gesDeportivaTests' do
+    inherit! :complete
+    # Pods for testing
+  end
+
+  post_install do |installer|
+    react_native_post_install(installer)
+    __apply_Xcode_12_5_M1_post_install_workaround(installer)
+  end
+end
+```
+
+Key points:
+
+- `platform :ios, '12.4'` sets the minimum deployment target to iOS 12.4
+- `hermes_enabled` and `fabric_enabled` are read from default flags — to enable Hermes, set the flag to `true` in the Podfile and re-run `pod install`
+- `FlipperConfiguration.enabled` wires in the Flipper debug client for debug builds
+- The `post_install` hook applies a workaround for Xcode 12.5 on Apple Silicon Macs
+
+## Installing pods
+
+Whenever you first clone the repository, add a new native dependency, or update React Native, you must install (or re-install) the CocoaPods dependencies:
+
+```bash
+cd ios && pod install
+```
+
+This generates the `ios/Pods/` directory and the `gesDeportiva.xcworkspace` file. Always open the `.xcworkspace` in Xcode — never the `.xcodeproj`.
+
+<Note>
+  If `pod install` fails with a Ruby or gem error, check that your Ruby version matches the version in `.ruby-version` (Ruby 2.7.5) and that CocoaPods is installed for that Ruby version.
+</Note>
+
+## Running the app
+
+<Steps>
+  <Step title="Install pods">
+    ```bash
+    cd ios && pod install
+    ```
+  </Step>
+  <Step title="Start Metro (optional)">
+    Metro starts automatically when you run the app, but you can start it separately for more control over the output:
+
+    ```bash
+    npm start
+    ```
+  </Step>
+  <Step title="Build and launch">
+    From the project root, build and launch on the default simulator:
+
+    ```bash
+    npm run ios
+    ```
+
+    This runs `react-native run-ios`, which compiles the Xcode project and boots the simulator.
+  </Step>
+</Steps>
+
+## Simulator vs physical device
+
+<Tabs>
+  <Tab title="Simulator">
+    `npm run ios` boots the default simulator (typically the latest iPhone model). To target a specific simulator, pass the `--simulator` flag:
+
+    ```bash
+    npm run ios -- --simulator="iPhone 14"
+    ```
+
+    List all available simulators with:
+
+    ```bash
+    xcrun simctl list devices
+    ```
+  </Tab>
+  <Tab title="Physical device">
+    Plug in your iPhone or iPad via USB. In Xcode, open `ios/gesDeportiva.xcworkspace`, select your device from the target menu, and configure code signing (see below). Then run:
+
+    ```bash
+    npm run ios -- --device
+    ```
+  </Tab>
+</Tabs>
+
+## Code signing
+
+To run gesDeportiva on a physical device or to archive for distribution, you must configure a team and bundle identifier in Xcode.
+
+<Steps>
+  <Step title="Open the workspace in Xcode">
+    ```bash
+    open ios/gesDeportiva.xcworkspace
+    ```
+  </Step>
+  <Step title="Select the gesDeportiva target">
+    In the project navigator, click on the **gesDeportiva** project, then select the **gesDeportiva** target.
+  </Step>
+  <Step title="Configure signing">
+    Under the **Signing & Capabilities** tab:
+    - Set **Team** to your Apple Developer account
+    - Confirm the **Bundle Identifier** matches `com.gesdeportiva` (or update it to a unique identifier registered in your account)
+  </Step>
+</Steps>
+
+<Tip>
+  For personal testing on a physical device, a free Apple ID works with automatic signing. Distribution to the App Store or TestFlight requires a paid Apple Developer Program membership.
+</Tip>
+
+## Common issues
+
+<AccordionGroup>
+  <Accordion title="pod install fails">
+    If `pod install` fails, try the following steps in order:
+
+    1. Delete `ios/Pods/` and `ios/Podfile.lock`, then re-run `pod install`
+    2. Ensure your Ruby version matches `.ruby-version` (use `rbenv install` or `rvm use`)
+    3. Update CocoaPods with `gem install cocoapods` and retry
+
+    On Apple Silicon Macs, you may need to run `arch -x86_64 pod install` if a pod does not yet have an ARM binary.
+  </Accordion>
+  <Accordion title="Simulator not found">
+    If the specified simulator name is not recognised, list available devices:
+
+    ```bash
+    xcrun simctl list devices
+    ```
+
+    Use the exact name shown in the output as the `--simulator` argument.
+  </Accordion>
+  <Accordion title="Code signing errors">
+    `No signing certificate found` or `Provisioning profile not found` errors indicate Xcode cannot locate a valid certificate for the selected team. Open Xcode, go to **Preferences → Accounts**, sign in with your Apple ID, and click **Manage Certificates** to create a development certificate.
+  </Accordion>
+  <Accordion title="Hermes not enabled after Podfile change">
+    Enabling or disabling Hermes requires reinstalling pods and a full clean build. After editing the Podfile:
+
+    ```bash
+    cd ios && pod install
+    ```
+
+    Then clean the build folder in Xcode with **Product → Clean Build Folder** (⇧⌘K) before running again.
+  </Accordion>
+</AccordionGroup>

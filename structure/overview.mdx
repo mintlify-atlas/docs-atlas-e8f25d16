@@ -1,0 +1,64 @@
+---
+title: 'gesDeportiva app architecture and file structure'
+description: 'Explore the directory layout of gesDeportiva, how the root component, navigator, and screens relate, and where each piece of the app lives.'
+---
+
+gesDeportiva is a React Native application organised around a clear three-layer hierarchy: an entry point that registers the app with the native runtime, a root component that owns the navigation tree, and individual screen components that render the actual UI. Understanding how these layers connect makes it straightforward to add new screens, adjust navigation, or extend existing functionality.
+
+## Directory layout
+
+```
+gesdeportiva/
+├── App.js              # Root component — renders Navigation
+├── index.js            # Entry point — registers App with AppRegistry
+├── app.json            # App name config read by index.js
+├── navigations/
+│   └── Navigation.js   # Bottom tab navigator (Login + Menu tabs)
+├── screens/
+│   ├── Login.js        # Login screen component
+│   └── Menu.js         # Menu screen component
+├── android/            # Android native project
+└── ios/                # iOS native project
+```
+
+## Boot sequence
+
+When the app launches on device, the native runtime calls into `index.js`, which uses `AppRegistry` to associate the app name (read from `app.json`) with the `App` component. React Native then mounts `App`, which renders `Navigation`. `Navigation` wraps everything in a `NavigationContainer` and builds the bottom tab bar with the registered screens.
+
+<Steps>
+  <Step title="index.js registers the app">
+    `AppRegistry.registerComponent` links the app name from `app.json` to the root `App` component and hands control to React Native.
+  </Step>
+  <Step title="App renders Navigation">
+    `App` is intentionally thin — its only job is to mount the `Navigation` component, keeping routing logic out of the entry point.
+  </Step>
+  <Step title="Navigation builds the tab bar">
+    `Navigation` wraps screens in a `NavigationContainer` and registers each screen as a `Tab.Screen` inside a `Tab.Navigator`.
+  </Step>
+</Steps>
+
+## Component chain
+
+The chain from entry point to rendered screen is direct and shallow:
+
+```js App.js
+import * as React from 'react';
+import Navigation from "./navigations/Navigation";
+
+export default function App(){
+  return (
+    <Navigation/>
+  );
+}
+```
+
+`App` imports `Navigation` and renders it as its sole child. `Navigation` in turn imports the individual screen components and wires them into the tab navigator. No global state, context providers, or additional wrappers exist yet — making this an ideal baseline to build on.
+
+<CardGroup cols={2}>
+  <Card title="Navigation" icon="compass" href="/structure/navigation">
+    How the bottom tab navigator is configured and how to add new tabs.
+  </Card>
+  <Card title="Screens" icon="layout" href="/structure/screens">
+    Reference for the Login and Menu screens and how to create new ones.
+  </Card>
+</CardGroup>

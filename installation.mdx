@@ -1,0 +1,158 @@
+---
+title: "Development environment setup for gesDeportiva"
+description: "Configure Android Studio or Xcode, set up emulators, and install all platform-specific dependencies needed to build and run gesDeportiva locally."
+---
+
+gesDeportiva targets Android and iOS from a single React Native codebase. Each platform requires its own native toolchain. Follow the section for your target platform — you can set up both if you want to run on Android and iOS.
+
+<Warning>
+  iOS development requires macOS. You cannot build or run the iOS target on Windows or Linux.
+</Warning>
+
+## Platform setup
+
+<Tabs>
+  <Tab title="Android">
+    ### Install Android Studio
+
+    Download and install [Android Studio](https://developer.android.com/studio). During installation, make sure the following components are selected:
+
+    - Android SDK
+    - Android SDK Platform
+    - Android Virtual Device (AVD)
+
+    ### Configure the Android SDK
+
+    gesDeportiva targets **API level 31** or higher. In Android Studio, open **SDK Manager** (via **Settings > Languages & Frameworks > Android SDK**) and install:
+
+    - **Android SDK Platform 31** (or higher)
+    - **Intel x86 Atom_64 System Image** or **Google APIs Intel x86 Atom System Image** (for the emulator)
+
+    ### Set the ANDROID_HOME environment variable
+
+    React Native CLI needs to know where the SDK is installed. Add the following to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.):
+
+    ```bash
+    export ANDROID_HOME=$HOME/Library/Android/sdk        # macOS
+    # export ANDROID_HOME=$HOME/Android/Sdk             # Linux
+    export PATH=$PATH:$ANDROID_HOME/emulator
+    export PATH=$PATH:$ANDROID_HOME/platform-tools
+    ```
+
+    Reload your shell after saving:
+
+    ```bash
+    source ~/.zshrc   # or source ~/.bashrc
+    ```
+
+    ### Create and start an emulator
+
+    In Android Studio, open **Virtual Device Manager** and create a new device. Choose a hardware profile (e.g. Pixel 6) and a system image at API 31 or above. Start the emulator before running the app.
+
+    ### Run on Android
+
+    With the emulator running, execute:
+
+    ```bash
+    npm run android
+    ```
+
+    This runs `react-native run-android`, which builds the app and installs it on the emulator. The Android package is registered as `com.gesdeportiva` (see `android/app/src/main/AndroidManifest.xml`).
+
+    <Tip>
+      You can also run on a physical Android device. Enable **Developer options** and **USB debugging** on the device, then connect it via USB. It will appear as a target automatically.
+    </Tip>
+  </Tab>
+
+  <Tab title="iOS">
+    <Warning>
+      iOS development requires macOS. This tab does not apply on Windows or Linux.
+    </Warning>
+
+    ### Install Xcode
+
+    Install Xcode from the [Mac App Store](https://apps.apple.com/us/app/xcode/id497799835). After installation, open it once to accept the license agreement, then install the command-line tools:
+
+    ```bash
+    xcode-select --install
+    ```
+
+    ### Install CocoaPods
+
+    CocoaPods manages the native iOS dependencies. The project includes a `.ruby-version` file that pins Ruby to **2.7.5** for compatibility with CocoaPods.
+
+    <Note>
+      The `.ruby-version` file in the project root pins Ruby to 2.7.5. If you use a Ruby version manager (rbenv, rvm, or asdf), make sure that version is installed before installing CocoaPods.
+    </Note>
+
+    Install CocoaPods using either gem or Homebrew:
+
+    <CodeGroup>
+      ```bash gem
+      gem install cocoapods
+      ```
+
+      ```bash Homebrew
+      brew install cocoapods
+      ```
+    </CodeGroup>
+
+    ### Install iOS pods
+
+    Navigate to the `ios` directory and run pod install:
+
+    ```bash
+    cd ios && pod install
+    ```
+
+    This resolves and links the native dependencies required by React Native and its libraries.
+
+    ### Run on iOS
+
+    From the project root, execute:
+
+    ```bash
+    npm run ios
+    ```
+
+    This runs `react-native run-ios`, which builds the app and launches it in the iOS simulator.
+
+    <Tip>
+      To run on a physical iPhone or iPad, open `ios/gesDeportiva.xcworkspace` in Xcode, select your device as the build target, and press **Run**. You will need an Apple Developer account to sign the app.
+    </Tip>
+  </Tab>
+</Tabs>
+
+## Verify your setup
+
+After completing platform setup, confirm everything works end to end:
+
+<Steps>
+  <Step title="Install JavaScript dependencies">
+    ```bash
+    npm install
+    ```
+  </Step>
+
+  <Step title="Start Metro">
+    ```bash
+    npm start
+    ```
+  </Step>
+
+  <Step title="Launch the app">
+    In a separate terminal, run the platform command:
+
+    <CodeGroup>
+      ```bash Android
+      npm run android
+      ```
+
+      ```bash iOS
+      npm run ios
+      ```
+    </CodeGroup>
+
+    The app should open with two bottom tabs: **Login** and **Menu**.
+  </Step>
+</Steps>
